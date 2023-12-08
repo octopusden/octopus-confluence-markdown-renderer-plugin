@@ -6,6 +6,5 @@ jobs:
   release:
     uses: octopusden/octopus-base/.github/workflows/common-java-maven-release.yml@v2.1.7
     with:
-      flow-type: public
       java-version: '8'
     secrets: inherit
