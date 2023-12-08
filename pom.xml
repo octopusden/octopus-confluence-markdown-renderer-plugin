@@ -17,6 +17,51 @@
         <confluence-maven-plugin.version>8.1.0</confluence-maven-plugin.version>
     </properties>
 
+    <scm>
+        <connection>scm:git:git://github.com/octopusden/octopus-confluence-markdown-macro.git</connection>
+        <developerConnection>scm:git:ssh://github.com:octopusden/octopus-confluence-markdown-macro.git</developerConnection>
+        <url>https://github.com/octopusden/octopus-confluence-markdown-macro/tree/main</url>
+    </scm>
+
+    <repositories>
+        <repository>
+            <id>central</id>
+            <name>Maven Central</name>
+            <layout>default</layout>
+            <url>https://repo1.maven.org/maven2</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>atlassian-public</id>
+            <name>Atlassian Public Repository</name>
+            <url>https://maven.atlassian.com/repository/public</url>
+            <releases>
+                <enabled>true</enabled>
+                <checksumPolicy>warn</checksumPolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <releases>
+                <enabled>true</enabled>
+                <checksumPolicy>warn</checksumPolicy>
+            </releases>
+            <snapshots>
+                <updatePolicy>never</updatePolicy>
+                <checksumPolicy>warn</checksumPolicy>
+            </snapshots>
+            <id>atlassian-public</id>
+            <url>https://maven.atlassian.com/repository/public</url>
+        </pluginRepository>
+    </pluginRepositories>
+
     <dependencies>
         <dependency>
             <groupId>com.atlassian.confluence</groupId>
@@ -78,10 +123,9 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.5</version>
+                    <version>3.11.0</version>
                     <configuration>
-                        <source>1.8</source>
-                        <target>1.8</target>
+                        <release>11</release>
                     </configuration>
                 </plugin>
             </plugins>
