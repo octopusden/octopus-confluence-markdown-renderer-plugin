@@ -1,0 +1,10 @@
+name: Gradle Build & UT
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build:
+    uses: octopusden/octopus-base/.github/workflows/common-java-maven-build.yml@v2.1.7
+    with:
+      flow-type: public
+      java-version: '8'
