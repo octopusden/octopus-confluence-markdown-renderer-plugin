@@ -2,7 +2,7 @@ name: Check for artifact and register release
 
 on:
   workflow_run:
-    workflows: ["Gradle Release"]
+    workflows: ["Maven Release"]
     types:
       - completed
 
