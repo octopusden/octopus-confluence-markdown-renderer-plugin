@@ -17,6 +17,12 @@
         <confluence-maven-plugin.version>8.1.0</confluence-maven-plugin.version>
     </properties>
 
+    <scm>
+        <connection>scm:git:git://github.com/octopusden/octopus-confluence-markdown-macro.git</connection>
+        <developerConnection>scm:git:ssh://github.com:octopusden/octopus-confluence-markdown-macro.git</developerConnection>
+        <url>https://github.com/octopusden/octopus-confluence-markdown-macro/tree/main</url>
+    </scm>
+
     <dependencies>
         <dependency>
             <groupId>com.atlassian.confluence</groupId>
