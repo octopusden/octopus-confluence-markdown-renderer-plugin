@@ -25,17 +25,25 @@
 
     <repositories>
         <repository>
+            <id>central</id>
+            <name>Maven Central</name>
+            <layout>default</layout>
+            <url>https://repo1.maven.org/maven2</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>atlassian-public</id>
+            <name>Atlassian Public Repository</name>
+            <url>https://maven.atlassian.com/repository/public</url>
             <releases>
                 <enabled>true</enabled>
                 <checksumPolicy>warn</checksumPolicy>
             </releases>
             <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>never</updatePolicy>
-                <checksumPolicy>warn</checksumPolicy>
+                <enabled>false</enabled>
             </snapshots>
-            <id>atlassian-public</id>
-            <url>https://maven.atlassian.com/repository/public</url>
         </repository>
     </repositories>
 
