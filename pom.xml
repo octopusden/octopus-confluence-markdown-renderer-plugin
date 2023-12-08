@@ -23,8 +23,8 @@
         <url>https://github.com/octopusden/octopus-confluence-markdown-macro/tree/main</url>
     </scm>
 
-    <repositories>
-        <repository>
+    <pluginRepositories>
+        <pluginRepository>
             <id>atlassian-public</id>
             <url>https://packages.atlassian.com/maven-public/</url>
             <snapshots>
@@ -36,8 +36,8 @@
                 <enabled>true</enabled>
                 <checksumPolicy>warn</checksumPolicy>
             </releases>
-        </repository>
-    </repositories>
+        </pluginRepository>
+    </pluginRepositories>
 <!--
 
     <pluginRepositories>
