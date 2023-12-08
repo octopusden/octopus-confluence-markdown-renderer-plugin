@@ -1,4 +1,4 @@
-name: Gradle Build & UT
+name: Maven Build & UT
 
 on: [push, pull_request, workflow_dispatch]
 
