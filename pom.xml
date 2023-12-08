@@ -23,37 +23,36 @@
         <url>https://github.com/octopusden/octopus-confluence-markdown-macro/tree/main</url>
     </scm>
 
-    <pluginRepositories>
-        <pluginRepository>
-            <id>atlassian-public</id>
-            <url>https://packages.atlassian.com/maven-public/</url>
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+                <checksumPolicy>warn</checksumPolicy>
+            </releases>
             <snapshots>
                 <enabled>true</enabled>
                 <updatePolicy>never</updatePolicy>
                 <checksumPolicy>warn</checksumPolicy>
             </snapshots>
-            <releases>
-                <enabled>true</enabled>
-                <checksumPolicy>warn</checksumPolicy>
-            </releases>
-        </pluginRepository>
-    </pluginRepositories>
-<!--
-
+            <id>atlassian-public</id>
+            <url>https://maven.atlassian.com/repository/public</url>
+        </repository>
+    </repositories>
+    
     <pluginRepositories>
         <pluginRepository>
-            <id>atlassian-plugin-sdk</id>
-            <url>file://${env.ATLAS_HOME}/repository</url>
             <releases>
                 <enabled>true</enabled>
                 <checksumPolicy>warn</checksumPolicy>
             </releases>
             <snapshots>
-                <enabled>false</enabled>
+                <updatePolicy>never</updatePolicy>
+                <checksumPolicy>warn</checksumPolicy>
             </snapshots>
+            <id>atlassian-public</id>
+            <url>https://maven.atlassian.com/repository/public</url>
         </pluginRepository>
     </pluginRepositories>
--->
 
     <dependencies>
         <dependency>
