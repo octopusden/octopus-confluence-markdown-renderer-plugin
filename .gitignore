@@ -1,5 +1,12 @@
-target/
+/*/target/
+/*/logs/
+/*/test_folder/
 .idea/
+
+*.log
 *.iml
-*.ipr
-*.iws
+*.class
+*.jar
+*.prm
+*.zip
+dependency-reduced-pom.xml

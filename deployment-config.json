@@ -1,0 +1,8 @@
+{
+  ".*" : {
+    ".*/target/.*\\.jar$": {
+      "CI_TYPE": "JAVALIB",
+      "GROUP_ID": "${MVN_PREFIX}.cdt.libs.${PRODUCT}.${BRANCH}"
+    }
+  }
+}

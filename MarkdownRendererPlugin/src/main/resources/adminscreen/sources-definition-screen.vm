@@ -1,0 +1,227 @@
+<html xmlns="http://www.w3.org/1999/html" xmlns="http://www.w3.org/1999/html">
+    <head>
+        <meta name="decorator" content="space.admin"/>
+        <content tag="space.admin.tools.selected">space-tools-link-for-md-renderer</content>
+    </head>
+    <body>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            border-spacing: 4px;
+        }
+        tr {
+            text-align: left;
+            border-bottom: 5px solid white;
+        }
+        tr:hover {
+            background-color: #fafbfc;
+        }
+        select {
+            width: 90%;
+        }
+        input[type=text], input[type=password]{
+            width: 95%;
+            border-radius: 4px;
+            border-width: 1px;
+        }
+        input[type=submit] {
+            cursor: pointer;
+        }
+        input[type=checkbox] {
+            cursor: pointer;
+        }
+        .header {
+            border-bottom: 1px solid black;
+        }
+        .header:hover {
+            background-color: white;
+        }
+        .inputRow:hover {
+            background-color: #f2f2f2;
+        }
+        .disabledCell {
+            background-color: #e6e6e6;
+        }
+        .boldText {
+            font-size: 120%;
+            font-weight: bold;
+        }
+        .errMsg {
+            color: red;
+            font-weight: bold;
+        }
+        .button {
+            align-items: baseline;
+            border-width: 0px;
+            border-radius: 3px;
+            box-sizing: border-box;
+            display: inline-flex;
+            font-size: inherit;
+            font-weight: 500;
+            max-width: 100%;
+            position: relative;
+            text-align: center;
+            text-decoration: none;
+            transition: background 0.1s ease-out, box-shadow 0.15s cubic-bezier(0.47, 0.03, 0.49, 1.38);
+            background: none;
+            height: 1.71429em;
+            line-height: 1.71429em;
+            padding: 0px 2px;
+            vertical-align: middle;
+            width: auto;
+            justify-content: center;
+            font-family: inherit;
+            white-space: nowrap;
+            color: #42526E;
+        }
+        .button:hover:enabled {
+            background: var(--ds-background-neutral-subtle-hovered,rgba(9,30,66,0.08));
+            cursor: pointer;
+        }
+        .button:disabled, .button[disabled=""] {
+            color: #c2c2c2;
+        }
+    </style>
+    <form action="?key=${spaceKey}" method="post" onsubmit="submitAllowPlainUrl()">
+        <label for="allowPlainUrl">Allow Plain URL</label>
+        <input type="checkbox" id="allowPlainUrl" name="allowPlainUrl" onclick="checkEnableButton()" #if($allowPlainUrl) checked #end/>
+        <input type="hidden" name="rqAction" value="savePlainUrlChoice"/>
+        <input type="hidden" name="isChecked" id="isChecked"/>
+        <button type="submit" id="savePlainUrlChoice" class="button" name="savePlainUrlChoice" title="Save" disabled><svg width="20" height="20" viewBox="0 -20 448 512"><path d="M64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V173.3c0-17-6.7-33.3-18.7-45.3L352 50.7C340 38.7 323.7 32 306.7 32H64zm0 96c0-17.7 14.3-32 32-32H288c17.7 0 32 14.3 32 32v64c0 17.7-14.3 32-32 32H96c-17.7 0-32-14.3-32-32V128zM224 288a64 64 0 1 1 0 128 64 64 0 1 1 0-128z" fill="currentColor" fill-rule="evenodd"/></svg></button>
+    </form>
+    <p class="boldText">Sources List:</p>
+    <p></p>
+        <table>
+            <thead>
+                <tr class="header">
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>URL</th>
+                    <th>User</th>
+                    <th>Password</th>
+                </tr>
+            </thead>
+            #foreach($source in $savedSources.entrySet())
+                #if("PLAIN_URL" != $source.value.getSourceType())
+                    <tr>
+                        <td class="existingName">$source.key</td>
+                        <td>$source.value.getSourceType().getDisplayName()</td>
+                        <td>$source.value.getSourceUrl()</td>
+                        <td>$source.value.getSourceUsername()</td>
+                        <td>*****</td>
+                        <td style="white-space:nowrap;">
+                            <form action="?key=${spaceKey}" method="post" style="display: inline-block;">
+                                <input type="hidden" name="rqAction" value="edit"/>
+                                <input type="hidden" name="pickedKey" value="$source.key"/>
+                                <button type="submit" id="edit" name="edit" title="Edit" class="button" onclick="checkEnableSave()"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M4.02 19.23a1 1 0 001.18 1.18l3.81-.78-4.21-4.21-.78 3.81zM19.844 6.707l-2.12-2.122A1.997 1.997 0 0016.308 4c-.512 0-1.024.195-1.415.585l-9.757 9.758 4.95 4.95 9.757-9.758a2 2 0 000-2.828z" fill="currentColor" fill-rule="evenodd"></path></svg></button>
+                            </form>
+                            <form action="?key=${spaceKey}" method="post" style="display: inline-block;">
+                                <input type="hidden" name="rqAction" value="delete"/>
+                                <input type="hidden" name="pickedKey" value="$source.key"/>
+                                <button type="submit" id="delete" name="delete" title="Delete" class="button"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M5 5a1 1 0 00-1 1v1h16V6a1 1 0 00-1-1H5zm11.15 15H7.845a1 1 0 01-.986-.835L5 8h14l-1.864 11.166a.999.999 0 01-.986.834M9 4.5a.5.5 0 01.491-.5h5.018a.5.5 0 01.491.5V5H9v-.5z" fill="currentColor" fill-rule="evenodd"></path></svg></button>
+                            </form>
+                        </td>
+                    </tr>
+                #elseif($allowPlainUrl && "PLAIN_URL" == $source.value.getSourceType())
+                    <tr id="plainUrlRow">
+                        <td>$source.key</td>
+                        <td>$source.value.getSourceType().getDisplayName()</td>
+                        <td class="disabledCell"></td>
+                        <td class="disabledCell"></td>
+                        <td class="disabledCell"></td>
+                    </tr>
+                #end
+            #end
+            
+            <tr class="inputRow">
+                <form action="?key=${spaceKey}" method="post">
+                    <td><input type="text" id="newSourceName" name="newSourceName" oninput="checkExisting()" #if($editedSrcName) value="$editedSrcName" #end/></td>
+                    <td>
+                        <select id="newSourceType" name="newSourceType" onchange="checkEnableSave()">
+                            #foreach($type in $configurableSourcesTypes)
+                                #if($editedSrcProperties && $editedSrcProperties.getSourceType() == $type)
+                                    <option selected="selected">$type.getDisplayName()</option>
+                                #else
+                                    <option>$type.getDisplayName()</option>
+                                #end
+                            #end
+                        </select>
+                    </td>
+                    <td><input type="text" id="newSourceUrl" name="newSourceUrl" oninput="checkEnableSave()" #if($editedSrcProperties) value="$editedSrcProperties.getSourceUrl()" #end/></td>
+                    <td><input type="text" id="newSourceUser" name="newSourceUser" oninput="checkEnableSave()" #if($editedSrcProperties) value="$editedSrcProperties.getSourceUsername()" #end/></td>
+                    <td><input type="password" id="newSourcePwd" name="newSourcePwd" oninput="checkEnableSave()" #if($editedSrcProperties) value="$editedSrcProperties.getSourcePassword()" #end/></td>
+                    <input type="hidden" name="rqAction" value="add"/>
+                    <td><button type="submit" id="save" name="save" value="Save" title="Fill all fields to enable" class="button" disabled><svg width="24" height="24" viewBox="0 0 448 512"><path d="M64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V173.3c0-17-6.7-33.3-18.7-45.3L352 50.7C340 38.7 323.7 32 306.7 32H64zm0 96c0-17.7 14.3-32 32-32H288c17.7 0 32 14.3 32 32v64c0 17.7-14.3 32-32 32H96c-17.7 0-32-14.3-32-32V128zM224 288a64 64 0 1 1 0 128 64 64 0 1 1 0-128z" fill="currentColor" fill-rule="evenodd"/></svg></button></td>
+                </form>
+            </tr>
+        </table>
+        #if($errMessage)
+            <p id="errMsg" class="errMsg">$errMessage</p>
+        #end
+        <p id="errMsgJs" class="errMsg"></p>
+        <script>
+            var allowPlainUrlInitialStatus = document.getElementById("allowPlainUrl").checked;
+            var isInvalidName = false;
+            
+            function submitAllowPlainUrl() {
+                document.getElementById("isChecked").value = document.getElementById("allowPlainUrl").checked;
+                document.getElementById("savePlainUrlChoice").disabled = true;
+            }
+            
+            function checkEnableButton() {
+               if (allowPlainUrlInitialStatus != document.getElementById("allowPlainUrl").checked) {
+                   document.getElementById("savePlainUrlChoice").disabled = false;
+               } else {
+                   document.getElementById("savePlainUrlChoice").disabled = true;
+               }
+            }
+            
+            function checkEnableSave() {
+                var newSourceName = document.getElementById("newSourceName").value;
+                var newSourceUrl = document.getElementById("newSourceUrl").value;
+                var newSourceUser = document.getElementById("newSourceUser").value;
+                var newSourcePwd = document.getElementById("newSourcePwd").value;
+                
+                if (newSourceName.trim() != "" && newSourceUrl.trim() != "" && newSourceUser.trim() != "" && newSourcePwd.trim() != "" && !isInvalidName) {
+                    document.getElementById("save").disabled = false;
+                } else {
+                    document.getElementById("save").disabled = true;
+                }
+            }
+            
+            function checkExisting() {
+                var newSourceName = document.getElementById("newSourceName").value;
+                var existingNames = document.getElementsByClassName("existingName");
+                
+                if ("${plainUrlSourceName}" == newSourceName) {
+                    document.getElementById("errMsgJs").innerHTML = "Technical name already used for Plain URL Source Type, please pick a different name.";
+                    isInvalidName = true;
+                    checkEnableSave();
+                    return;
+                }
+                
+                for (var index in existingNames) {
+                    if (existingNames[index].innerHTML == newSourceName) {
+                        document.getElementById("errMsgJs").innerHTML = "Source with that name already exists, please delete existing one first or use a different name.";
+                        isInvalidName = true;
+                        checkEnableSave();
+                        return;
+                    }
+                }
+                document.getElementById("errMsgJs").innerHTML = "";
+                isInvalidName = false;
+                checkEnableSave();
+            }
+            
+            function setRqActionValue(val) {
+                document.getElementById("rqActionEditDelete").value = val;
+                return true;
+            }
+            
+            document.addEventListener("DOMContentLoaded", (event) => {
+                checkEnableSave();
+            });
+        </script>
+    </body>
+</html>

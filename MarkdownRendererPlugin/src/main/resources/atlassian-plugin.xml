@@ -1,0 +1,99 @@
+<atlassian-plugin name="${project.name}" key="${project.artifactId}" plugins-version="2">
+    <plugin-info>
+        <description>${project.description}</description>
+        <vendor name="Octopus"/>
+        <version>${project.version}</version>
+        <param name="plugin-icon">images/mdRendererIcon.png</param>
+        <param name="plugin-logo">images/mdRendererIcon.png</param>
+        <param name="atlassian-data-center-compatible">true</param>
+    </plugin-info>
+    
+    <web-resource key="mdrendered-dynamic-fields-logic">
+        <description>Module setting dynamic value to Source enum field</description>
+        <context>editor</context>
+        <context>editor-content</context>
+        <context>macro-browser</context>
+        <dependency>confluence.editor.actions:editor-macro-browser</dependency>
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <resource type="download" name="dynamic-fields-logic.js" location="js/dynamic-fields-logic.js"/>
+    </web-resource>
+
+    <rest key="mdrendered-rest-resource" path="/mdrenderer_rest" version="1.0">
+        <description>Module setting the Rest resource</description>
+    </rest>
+
+    <component-import key="mdrenderer-pluginsettingsfactory">
+        <description>Module setting the pluginSettingsFactory interface for data persistence</description>
+        <interface>com.atlassian.sal.api.pluginsettings.PluginSettingsFactory</interface>
+    </component-import>
+
+    <component key="mdrenderer-settingscomponent"
+               class="org.octopusden.octopus.cdt.mdrenderer.parmspersistence.MarkdownRendererSettings">
+        <description>Module setting the class responsible for data persistence</description>
+    </component>
+    
+    <xhtml-macro key="mdrenderer-macro"
+                 name="mdrenderer-macro"
+                 class="org.octopusden.octopus.cdt.mdrenderer.MarkdownRendererMacro"
+                 icon="/download/resources/${project.artifactId}/images/mdRendererIcon.png">
+        <category name="formatting"/>
+        <description>${project.description}</description>
+        <parameters>
+            <parameter name="sourceUrl" type="enum" required="true">
+                <option key="showNameInPlaceholder" value="false"/>
+                <option key="showValueInPlaceholder" value="false"/>
+            </parameter>
+            <parameter name="svnCountry" type="string" required="true" default="">
+                <option key="showNameInPlaceholder" value="false"/>
+                <option key="showValueInPlaceholder" value="false"/>
+            </parameter>
+            <parameter name="projectKey" type="string" required="true" default="">
+                <option key="showNameInPlaceholder" value="false"/>
+                <option key="showValueInPlaceholder" value="false"/>
+            </parameter>
+            <parameter name="svnBranchPath" type="string" required="false" default="">
+                <option key="showNameInPlaceholder" value="false"/>
+                <option key="showValueInPlaceholder" value="false"/>
+            </parameter>
+            <parameter name="mainRepository" type="string" required="true" default="">
+                <option key="showNameInPlaceholder" value="false"/>
+                <option key="showValueInPlaceholder" value="false"/>
+            </parameter>
+            <parameter name="pathToMarkdownFile" type="string" required="true" default="">
+                <option key="showNameInPlaceholder" value="false"/>
+                <option key="showValueInPlaceholder" value="false"/>
+            </parameter>
+            <parameter name="plainUrl" type="string" required="true" default="">
+                <option key="showNameInPlaceholder" value="false"/>
+                <option key="showValueInPlaceholder" value="false"/>
+            </parameter>
+            <parameter name="branch" type="string" required="false" default="">
+                <option key="showNameInPlaceholder" value="false"/>
+                <option key="showValueInPlaceholder" value="false"/>
+            </parameter>
+        </parameters>
+    </xhtml-macro>
+    
+    <resource type="i18n" name="i18n" location="MarkdownRendererPlugin"/>
+    <resource type="download" name="images/" key="images" location="images/"/>
+    
+    <web-item key="mdrenderer-admin-space-support" section="system.space.tools/addons" weight="50">
+        <description>Module setting the admin space support</description>
+        <label key="Markdown Renderer"/>
+        <link id="md-renderer-space-tools-id">/plugins/${project.artifactId}/manageSources.action?key=$generalUtil.urlEncode($helper.spaceKey)</link>
+        <condition class="com.atlassian.confluence.plugin.descriptor.web.conditions.SpacePermissionCondition">
+            <param name="permission">administer</param>
+        </condition>
+    </web-item>
+
+    <struts key="mdrenderer-admin-space-screens">
+        <description>Module settings the pages/screens within the admin space</description>
+        <package name="space-links-xwork-package" extends="default" namespace="/plugins/${project.artifactId}">
+            <default-interceptor-ref name="validatingStack"/>
+
+            <action name="manageSources" class="org.octopusden.octopus.cdt.mdrenderer.adminspace.AdminSpaceActions" method="doDefault">
+                <result name="input" type="velocity">/adminscreen/sources-definition-screen.vm</result>
+            </action>
+        </package>
+    </struts>
+</atlassian-plugin>
