@@ -5,7 +5,7 @@
 
     <groupId>org.octopusden.octopus.cdt.mdrenderer</groupId>
     <artifactId>markdown-renderer-plugin</artifactId>
-    <version>01.00</version>
+    <version>01.01</version>
     <packaging>atlassian-plugin</packaging>
 
     <name>Markdown Renderer Plugin for Confluence</name>
@@ -27,7 +27,7 @@
         <dependency>
             <groupId>com.vladsch.flexmark</groupId>
             <artifactId>flexmark-all</artifactId>
-            <version>0.35.10</version>
+            <version>0.64.8</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>

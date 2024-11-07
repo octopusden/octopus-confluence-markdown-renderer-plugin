@@ -10,7 +10,7 @@ This list can be reached and amended through the following steps:
 2. In the screen select "Markdown Renderer" tab
 3. There you should see the following screen:
 ![initialAdminScreen](src/main/resources/images/initialAdminScreen.png)<br/>
-Checking "Allow Plain URL" enables usage of Plain URL source for user, refer to section [Plain URL Parameters](#1) for more information.<br/>
+Checking "Allow Plain URL" enables usage of Plain URL source for users, refer to section [Plain URL Parameters](#1) for more information.<br/>
 "Sources List" presents the table of sources that plugin shall propose to users. From there you can view, add and delete sources.
 <br/> Each source has the following parameters:
    * Name -> name of the source, must be unique
@@ -59,7 +59,33 @@ Supported Wiki extensions:
 * Table of Contents
 * Code block
 
+#### Example of rendering images through base64 code
+
+> README.md:
+>
+> ```
+> ![base64Image](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABK0AAAS7C....)
+> ```
+
+#### Example of rendering images by relative path
+
+> File structure:
+>
+>```
+> root folder
+> ├── README.md
+> └── pictures
+>     └── image.png
+>```
+>
+> README.md:
+>
+>```
+> ![relativePathImage](pictures/image.png)
+>```
+
 ## Revision history
-| Version | Date       | Author          | Confluence version | Description      |
-|---------|------------|-----------------|--------------------|------------------|
-| 01.00   | 12.04.2024 | Gautier Devuyst | 8.5.4              | Initial version. |
+| Version | Date       | Author          | Confluence version | Description                                                                                                                                                            |
+|---------|------------|-----------------|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 01.01   | 07.11.2024 | Gautier Devuyst | 8.5.4              | Moved logic to check non-nullness of parameters only in relevant Source Type + updated flexmark library version + leading ">" are now properly removed in quoted code. |
+| 01.00   | 12.04.2024 | Gautier Devuyst | 8.5.4              | Initial version.                                                                                                                                                       |

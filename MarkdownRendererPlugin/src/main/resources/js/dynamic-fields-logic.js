@@ -5,7 +5,7 @@
     const gitSourceType = "GIT";
     const svnSourceType = "SUBVERSION";
     const plainUrlSourceType = "PLAIN_URL";
-    const selectNodes = ["sourceUrl"];
+    const selectNodes = ["sourceName"];
     const inputNodes = ["svnCountry", "projectKey", "mainRepository", "pathToMarkdownFile", "branch", "plainUrl", "svnBranchPath"];
     const i18nKeyDescNameTempl = "MarkdownRendererPlugin.mdrenderer-macro.param.{0}.{1}.desc";
     const i18nKeyLabelNameTempl = "MarkdownRendererPlugin.mdrenderer-macro.param.{0}.{1}.label";
@@ -27,14 +27,14 @@
     
     MarkdownRendererMacro.prototype.fields = {
         "enum": {
-            "sourceUrl": function (param, options) {
+            "sourceName": function (param, options) {
                 let paramDiv = AJS.$(Confluence.Templates.MacroBrowser.macroParameterSelect());
                 let sourceDropDown = AJS.$("select", paramDiv);
                 let prevSourceType = "";
                 getSourcesList(sourceDropDown)
                 
                 sourceDropDown.change(function () {
-                    const selectedSource = $("select#macro-param-sourceUrl option:selected").text();
+                    const selectedSource = $("select#macro-param-sourceName option:selected").text();
                     sourceType = jsSourcesMap.get(selectedSource)
                     if (prevSourceType !== sourceType) {
                         prevSourceType = sourceType;
@@ -67,7 +67,7 @@
     };
     
     MarkdownRendererMacro.prototype.beforeParamsSet = function (selectedParams, macroSelected) {
-        selectedSource = selectedParams.sourceUrl;
+        selectedSource = selectedParams.sourceName;
         
         return selectedParams;
     };
@@ -113,7 +113,7 @@
                     sourceDropDown.prepend($("<option selected disabled hidden></option>").val('').html("-- Select Source --")); // Empty val to prevent saving in macro config screen
                     selectedSource = '';
                 } 
-                $("select#macro-param-sourceUrl").val(selectedSource).change();
+                $("select#macro-param-sourceName").val(selectedSource).change();
             }
         });
     }

@@ -1,17 +1,18 @@
 package org.octopusden.octopus.cdt.mdrenderer.renderingengine;
 
-import com.vladsch.flexmark.Extension;
 import com.vladsch.flexmark.ast.FencedCodeBlock;
 import com.vladsch.flexmark.ast.IndentedCodeBlock;
-import com.vladsch.flexmark.html.CustomNodeRenderer;
 import com.vladsch.flexmark.html.HtmlRenderer;
 import com.vladsch.flexmark.html.HtmlWriter;
 import com.vladsch.flexmark.html.renderer.NodeRenderer;
 import com.vladsch.flexmark.html.renderer.NodeRendererContext;
 import com.vladsch.flexmark.html.renderer.NodeRendererFactory;
 import com.vladsch.flexmark.html.renderer.NodeRenderingHandler;
-import com.vladsch.flexmark.util.options.DataHolder;
-import com.vladsch.flexmark.util.options.MutableDataHolder;
+import com.vladsch.flexmark.html2md.converter.FlexmarkHtmlConverter;
+import com.vladsch.flexmark.util.ast.Block;
+import com.vladsch.flexmark.util.data.DataHolder;
+import com.vladsch.flexmark.util.data.MutableDataHolder;
+import com.vladsch.flexmark.util.misc.Extension;
 import com.vladsch.flexmark.util.sequence.BasedSequence;
 import org.apache.commons.text.StringEscapeUtils;
 
@@ -36,7 +37,7 @@ public class CodeBlockExtension implements HtmlRenderer.HtmlRendererExtension {
 
     public static class Factory implements NodeRendererFactory {
         @Override
-        public NodeRenderer create(DataHolder options) {
+        public NodeRenderer apply(DataHolder options) {
             return new ConfluenceCodeBlockNodeRenderer();
         }
     }
@@ -50,13 +51,13 @@ public class CodeBlockExtension implements HtmlRenderer.HtmlRendererExtension {
         @Override
         public Set<NodeRenderingHandler<?>> getNodeRenderingHandlers() {
             HashSet<NodeRenderingHandler<?>> handlers = new HashSet<NodeRenderingHandler<?>>();
-            NodeRenderingHandler<FencedCodeBlock> fencedCodeBlockHandler = new NodeRenderingHandler<FencedCodeBlock>(FencedCodeBlock.class, new CustomNodeRenderer<FencedCodeBlock>() {
+            NodeRenderingHandler<FencedCodeBlock> fencedCodeBlockHandler = new NodeRenderingHandler<FencedCodeBlock>(FencedCodeBlock.class, new NodeRenderingHandler.CustomNodeRenderer<FencedCodeBlock>() {
                 @Override
                 public void render(FencedCodeBlock node, NodeRendererContext context, HtmlWriter htmlWriter) {
                     ConfluenceCodeBlockNodeRenderer.this.renderFencedCodeBlock(node, htmlWriter);
                 }
             });
-            NodeRenderingHandler<IndentedCodeBlock> indentedCodeBlockHandler = new NodeRenderingHandler<IndentedCodeBlock>(IndentedCodeBlock.class, new CustomNodeRenderer<IndentedCodeBlock>() {
+            NodeRenderingHandler<IndentedCodeBlock> indentedCodeBlockHandler = new NodeRenderingHandler<IndentedCodeBlock>(IndentedCodeBlock.class, new NodeRenderingHandler.CustomNodeRenderer<IndentedCodeBlock>() {
                 @Override
                 public void render(IndentedCodeBlock node, NodeRendererContext context, HtmlWriter htmlWriter) {
                     ConfluenceCodeBlockNodeRenderer.this.renderIndentedCodeBlock(node, htmlWriter);
@@ -101,7 +102,7 @@ public class CodeBlockExtension implements HtmlRenderer.HtmlRendererExtension {
                 language = "java";
             }
             String code = fencedCodeBlock.getChildChars().toString();
-            write(code, language, htmlWriter);
+            write(code, language, htmlWriter, fencedCodeBlock);
         }
 
         private void renderIndentedCodeBlock(IndentedCodeBlock indentedCodeBlock, HtmlWriter htmlWriter) {
@@ -111,10 +112,11 @@ public class CodeBlockExtension implements HtmlRenderer.HtmlRendererExtension {
             }
             String code = builder.toString();
             // Confluence defaults to java
-            write(code, "java", htmlWriter);
+            write(code, "java", htmlWriter, indentedCodeBlock);
         }
 
-        private void write(String code, String language, HtmlWriter htmlWriter) {
+        private void write(String code, String language, HtmlWriter htmlWriter, Block processedBlock) {
+            code = removeLeadingQuoteInQuotedCode(processedBlock, code);
             String htmlOpen = String.format(CONFLUENCE_CODE_BLOCK_HTML_OPEN_TEMPLATE, language);
             htmlWriter.raw(htmlOpen);
             htmlWriter.openPre();
@@ -122,6 +124,13 @@ public class CodeBlockExtension implements HtmlRenderer.HtmlRendererExtension {
             htmlWriter.raw(StringEscapeUtils.escapeHtml4(code)); // Escaping to avoid conflict with XML tags
             htmlWriter.closePre();
             htmlWriter.raw(CONFLUENCE_CODE_BLOCK_HTML_CLOSE);
+        }
+
+        private String removeLeadingQuoteInQuotedCode(Block processedBlock, String code) {
+            if (processedBlock.getParent() != null && FlexmarkHtmlConverter.BLOCKQUOTE_NODE.equalsIgnoreCase(processedBlock.getParent().getNodeName())) {
+                code = code.replaceAll("\n\\s*>", "\n");
+            }
+            return code;
         }
     }
 }
