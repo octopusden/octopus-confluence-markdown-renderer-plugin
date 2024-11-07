@@ -39,7 +39,7 @@
         <category name="formatting"/>
         <description>${project.description}</description>
         <parameters>
-            <parameter name="sourceUrl" type="enum" required="true">
+            <parameter name="sourceName" type="enum" required="true">
                 <option key="showNameInPlaceholder" value="false"/>
                 <option key="showValueInPlaceholder" value="false"/>
             </parameter>

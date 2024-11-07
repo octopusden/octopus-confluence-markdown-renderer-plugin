@@ -14,8 +14,8 @@ import java.util.Map;
 import java.util.Objects;
 
 public class MarkdownRendererMacro implements Macro {
-    private static final String SOURCE_URL_PARM = "sourceUrl";
-    private static final String SOURCE_URL_LABEL = "Source URL";
+    private static final String SOURCE_NAME_PARM = "sourceName";
+    private static final String SOURCE_NAME_LABEL = "Source Name";
     private static final String SVN_COUNTRY_PARM = "svnCountry";
     private static final String SVN_COUNTRY_LABEL = "Client Country";
     private static final String PROJECT_KEY_PARM = "projectKey";
@@ -28,9 +28,9 @@ public class MarkdownRendererMacro implements Macro {
     private static final String SVN_BRANCH_PATH_PARM = "svnBranchPath";
     private static final String PLAIN_URL_PARM = "plainUrl";
     private static final String PLAIN_URL_LABEL = "Plain URL";
-    private static final String PARM_NOT_DEFINED_ERR_MSG = "Parameter [$parmNameTempl] is not defined.";
 
     private final MarkdownRendererSettings markdownRendererSettings;
+    private Map<String, String> pluginExecParms;
 
     @Inject
     public MarkdownRendererMacro(MarkdownRendererSettings markdownRendererSettings) {
@@ -49,27 +49,26 @@ public class MarkdownRendererMacro implements Macro {
 
     @Override
     public String execute(Map<String, String> parameters, String bodyContent, ConversionContext conversionContext) {
+        pluginExecParms = parameters;
         String markdown;
-        String sourceUrl = Objects.requireNonNull(parameters.get(SOURCE_URL_PARM), PARM_NOT_DEFINED_ERR_MSG.replaceAll("\\$parmNameTempl", SOURCE_URL_LABEL));
-        String svnCountry = Objects.requireNonNull(parameters.get(SVN_COUNTRY_PARM), PARM_NOT_DEFINED_ERR_MSG.replaceAll("\\$parmNameTempl", SVN_COUNTRY_LABEL));
-        String projectKey = Objects.requireNonNull(parameters.get(PROJECT_KEY_PARM), PARM_NOT_DEFINED_ERR_MSG.replaceAll("\\$parmNameTempl", PROJECT_KEY_LABEL));
-        String mainRepository = Objects.requireNonNull(parameters.get(MAIN_REPOSITORY_PARM), PARM_NOT_DEFINED_ERR_MSG.replaceAll("\\$parmNameTempl", MAIN_REPOSITORY_LABEL));
-        String pathMdFile = Objects.requireNonNull(parameters.get(PATH_MD_FILE_PARM), PARM_NOT_DEFINED_ERR_MSG.replaceAll("\\$parmNameTempl", PATH_MD_FILE_LABEL));
-        String plainUrl = Objects.requireNonNull(parameters.get(PLAIN_URL_PARM), PARM_NOT_DEFINED_ERR_MSG.replaceAll("\\$parmNameTempl", PLAIN_URL_LABEL));
-        SourceProperties sourceProperties = markdownRendererSettings.getDeserializedSourcesMap().get(sourceUrl);
-        pathMdFile = pathMdFile.replace('\\', '/');
-        
+        String sourceName = getParmValueOrDisplayErrorMsgIfNull(SOURCE_NAME_PARM, SOURCE_NAME_LABEL);
+        SourceProperties sourceProperties = markdownRendererSettings.getDeserializedSourcesMap().get(sourceName);
+
         if (sourceProperties == null) {
-            markdown = "Source with name[" + sourceUrl +"] no longer available. Contact Space Admin and/or pick another available source.";
+            markdown = "Source with name[" + sourceName + "] no longer available. Contact Space Admin and/or pick another available source.";
         } else {
             try {
-                String branch;
+                String branch, projectKey, pathMdFile;
                 MarkdownRenderer markdownRenderer = new MarkdownRenderer();
                 switch (sourceProperties.getSourceType()) {
                     case GIT:
+                        String mainRepository = getParmValueOrDisplayErrorMsgIfNull(MAIN_REPOSITORY_PARM, MAIN_REPOSITORY_LABEL);
+                        projectKey = getParmValueOrDisplayErrorMsgIfNull(PROJECT_KEY_PARM, PROJECT_KEY_LABEL);
+                        pathMdFile = getParmValueOrDisplayErrorMsgIfNull(PATH_MD_FILE_PARM, PATH_MD_FILE_LABEL).replace('\\', '/');
                         branch = parameters.getOrDefault(BRANCH_PARM, "master");
-                        GitMarkdownFetcher gitMarkdownDownloader = 
-                                new GitMarkdownFetcher(sourceProperties, 
+
+                        GitMarkdownFetcher gitMarkdownDownloader =
+                                new GitMarkdownFetcher(sourceProperties,
                                         projectKey,
                                         mainRepository,
                                         pathMdFile,
@@ -77,21 +76,27 @@ public class MarkdownRendererMacro implements Macro {
                         markdown = markdownRenderer.fetchAndRender(gitMarkdownDownloader);
                         break;
                     case SUBVERSION:
+                        String svnCountry = getParmValueOrDisplayErrorMsgIfNull(SVN_COUNTRY_PARM, SVN_COUNTRY_LABEL);
+                        projectKey = getParmValueOrDisplayErrorMsgIfNull(PROJECT_KEY_PARM, PROJECT_KEY_LABEL);
+                        pathMdFile = getParmValueOrDisplayErrorMsgIfNull(PATH_MD_FILE_PARM, PATH_MD_FILE_LABEL).replace('\\', '/');
                         branch = parameters.getOrDefault(SVN_BRANCH_PATH_PARM, "branches/int");
-                        SubversionMarkdownFetcher subversionMarkdownFetcher = 
-                                new SubversionMarkdownFetcher(sourceProperties, 
-                                        svnCountry, 
+
+                        SubversionMarkdownFetcher subversionMarkdownFetcher =
+                                new SubversionMarkdownFetcher(sourceProperties,
+                                        svnCountry,
                                         projectKey,
                                         branch,
                                         pathMdFile);
                         markdown = markdownRenderer.fetchAndRender(subversionMarkdownFetcher);
                         break;
                     case PLAIN_URL:
+                        String plainUrl = getParmValueOrDisplayErrorMsgIfNull(PLAIN_URL_PARM, PLAIN_URL_LABEL);
+
                         PlainUrlMarkdownFetcher plainUrlMarkdownFetcher = new PlainUrlMarkdownFetcher(plainUrl);
                         markdown = markdownRenderer.fetchAndRender(plainUrlMarkdownFetcher);
                         break;
                     default:
-                        markdown = "Unsupported Source Type defined[" + sourceProperties.getSourceType() + "] for used Source URL[" + sourceUrl + "]";
+                        markdown = "Unsupported Source Type defined[" + sourceProperties.getSourceType() + "] for used Source URL[" + sourceName + "]";
                 }
             } catch (Exception e) {
                 markdown = "Exception[" + e.getMessage() + "] during " + sourceProperties.getSourceType().getDisplayName() + " source rendering.";
@@ -99,5 +104,9 @@ public class MarkdownRendererMacro implements Macro {
         }
 
         return markdown;
+    }
+
+    String getParmValueOrDisplayErrorMsgIfNull(String parmKey, String parmName) {
+        return Objects.requireNonNull(pluginExecParms.get(parmKey), "Parameter [" + parmName + "] is not defined.");
     }
 }
