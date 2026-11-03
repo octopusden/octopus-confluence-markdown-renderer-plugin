@@ -83,9 +83,3 @@ Supported Wiki extensions:
 >```
 > ![relativePathImage](pictures/image.png)
 >```
-
-## Revision history
-| Version | Date       | Author          | Confluence version | Description                                                                                                                                                            |
-|---------|------------|-----------------|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 01.01   | 07.11.2024 | Gautier Devuyst | 8.5.4              | Moved logic to check non-nullness of parameters only in relevant Source Type + updated flexmark library version + leading ">" are now properly removed in quoted code. |
-| 01.00   | 12.04.2024 | Gautier Devuyst | 8.5.4              | Initial version.                                                                                                                                                       |
