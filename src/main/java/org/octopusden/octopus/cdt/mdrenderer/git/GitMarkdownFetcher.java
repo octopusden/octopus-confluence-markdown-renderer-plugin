@@ -57,7 +57,7 @@ public class GitMarkdownFetcher implements IMarkdownFetcher {
                 "rest/api/1.0/projects/" + URLEncoder.encode(projectKey, "UTF-8") +
                 "/repos/" + URLEncoder.encode(repository, "UTF-8");
 
-        this.basicAuth = "Basic " + printBase64Binary((sourceProperties.getSourceUsername() + ":" + sourceProperties.getSourcePassword()).getBytes());
+        this.basicAuth = "Basic " + printBase64Binary((sourceProperties.getSourceUsername() + ":" + sourceProperties.getSourcePassword()).getBytes(StandardCharsets.UTF_8));
         this.path = path;
         this.revision = revision;
     }

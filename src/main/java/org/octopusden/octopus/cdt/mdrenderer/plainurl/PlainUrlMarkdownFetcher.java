@@ -30,7 +30,7 @@ public class PlainUrlMarkdownFetcher implements IMarkdownFetcher {
             CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL));
             URLConnection urlConnection = url.openConnection();
             if(url.getUserInfo() != null) {
-                String basicAuth = "Basic " + printBase64Binary(url.getUserInfo().getBytes());
+                String basicAuth = "Basic " + printBase64Binary(url.getUserInfo().getBytes(StandardCharsets.UTF_8));
                 urlConnection.setRequestProperty("Authorization", basicAuth);
             }
      

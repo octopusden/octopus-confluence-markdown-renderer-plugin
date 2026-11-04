@@ -32,7 +32,7 @@ public class SubversionMarkdownFetcher implements IMarkdownFetcher {
                 (path.startsWith("/") ? "" : "/") +
                 path;
         
-        basicAuth = "Basic " + printBase64Binary((sourceProperties.getSourceUsername() + ":" + sourceProperties.getSourcePassword()).getBytes());
+        basicAuth = "Basic " + printBase64Binary((sourceProperties.getSourceUsername() + ":" + sourceProperties.getSourcePassword()).getBytes(StandardCharsets.UTF_8));
     }
 
     @Override
