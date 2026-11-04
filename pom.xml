@@ -11,7 +11,7 @@
 
     <groupId>org.octopusden.octopus.cdt.mdrenderer</groupId>
     <artifactId>markdown-renderer-plugin</artifactId>
-    <version>01.01</version>
+    <version>2.0-SNAPSHOT</version>
     <packaging>atlassian-plugin</packaging>
 
     <name>Markdown Renderer Plugin for Confluence</name>
