@@ -1,0 +1,139 @@
+# Builds the plugin, tags the released commit and attaches the plugin jar to a GitHub Release.
+#
+# The plugin is installed into Confluence by hand: the jar is downloaded from the release.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      increment-version-level:
+        description: Semver level to bump the latest v* tag by
+        required: false
+        type: choice
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+      dry-run:
+        description: Build and package only; tag, release and register nothing
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Two overlapping releases would compute the same version. Dry runs get a group of their own.
+concurrency:
+  group: release-${{ github.repository }}-${{ inputs.dry-run && github.run_id || 'publish' }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      sha: ${{ steps.version.outputs.sha }}
+    steps:
+      # The GITHUB_TOKEN cannot tag a commit that carries workflow files found on no branch head,
+      # which a dispatch from another branch can produce. Releasing the default branch avoids it.
+      - name: Release only from the default branch
+        if: github.ref != format('refs/heads/{0}', github.event.repository.default_branch)
+        run: |
+          echo "::error::Run this workflow from ${{ github.event.repository.default_branch }}, not ${{ github.ref_name }}." >&2
+          exit 1
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate version
+        id: version
+        env:
+          LEVEL: ${{ inputs.increment-version-level }}
+        run: |
+          set -euo pipefail
+          latest="$(git tag --list 'v*' | grep -E '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$' | sort -V | tail -n 1 || true)"
+          if [ -z "${latest}" ]; then
+            echo "::error::No vX.Y.Z tag to bump. Create the starting tag first." >&2
+            exit 1
+          fi
+          IFS=. read -r major minor patch <<<"${latest#v}"
+          case "${LEVEL}" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            patch) patch=$((patch + 1)) ;;
+            *) echo "::error::Unknown increment level '${LEVEL}'." >&2; exit 1 ;;
+          esac
+          version="${major}.${minor}.${patch}"
+          if git rev-parse -q --verify "refs/tags/v${version}" >/dev/null; then
+            echo "::error::Tag v${version} already exists." >&2
+            exit 1
+          fi
+          echo "Latest tag ${latest}, releasing ${version}"
+          {
+            echo "version=${version}"
+            echo "sha=$(git rev-parse HEAD)"
+          } >> "${GITHUB_OUTPUT}"
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+
+      - name: Set version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: mvn --batch-mode org.codehaus.mojo:versions-maven-plugin:2.13.0:set -DnewVersion="${VERSION}" -DgenerateBackupPoms=false
+
+      # Only the plugin jar is released, so the sources and javadoc jars are not built.
+      - name: Build
+        run: mvn --batch-mode package -Dmaven.source.skip=true -Dmaven.javadoc.skip=true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin-${{ steps.version.outputs.version }}
+          path: target/*-${{ steps.version.outputs.version }}.jar
+          if-no-files-found: error
+          retention-days: 7
+
+  # A job of its own, so that "re-run failed jobs" repeats only the tagging.
+  tag-and-release:
+    name: Tag and release
+    if: ${{ !inputs.dry-run }}
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: plugin-${{ needs.build.outputs.version }}
+          path: dist
+
+      - name: Create the tag and the GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: v${{ needs.build.outputs.version }}
+          SHA: ${{ needs.build.outputs.sha }}
+        run: |
+          set -euo pipefail
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "Release ${TAG} exists; attaching the files again."
+            gh release upload "${TAG}" dist/* --clobber
+          else
+            gh release create "${TAG}" dist/* --target "${SHA}" --title "${TAG}" --generate-notes
+          fi
+
+  register:
+    name: Register release
+    if: ${{ !inputs.dry-run }}
+    needs: [build, tag-and-release]
+    uses: octopusden/octopus-base/.github/workflows/common-register-release.yml@v3.4.1
+    with:
+      octopus-repository: ${{ github.repository }}
+      release-version: ${{ needs.build.outputs.version }}
+    secrets: inherit

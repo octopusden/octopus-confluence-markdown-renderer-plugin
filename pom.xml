@@ -55,7 +55,7 @@
             <version>${confluence.version}</version>
             <scope>provided</scope>
             <exclusions>
-                <!-- The jta 1.0.1B jar is not on Maven Central or the Atlassian repositories (Sun licence); Confluence provides it at runtime -->
+                <!-- The jta 1.0.1B jar is not available from any public Maven repository (Sun licence); Confluence provides it at runtime -->
                 <exclusion>
                     <groupId>javax.transaction</groupId>
                     <artifactId>jta</artifactId>
