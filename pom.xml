@@ -28,8 +28,10 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <confluence.version>8.5.4</confluence.version>
         <confluence.rest-common.version>7.2.1</confluence.rest-common.version>
-        <!-- Parent quality gates are off until the existing findings are worked down -->
-        <octopus.quality.skip>true</octopus.quality.skip>
+        <!-- atlassian-plugin packaging unpacks the dependencies into target/classes; analyse only our own classes -->
+        <spotbugs.onlyAnalyze>org.octopusden.octopus.cdt.mdrenderer.-</spotbugs.onlyAnalyze>
+        <!-- Ratchet: 25 SpotBugs findings exist today (EI_EXPOSE_REP*, default encoding, unwritten fields); lower it as they are fixed, never raise it -->
+        <octopus.quality.maxViolations.spotbugs>25</octopus.quality.maxViolations.spotbugs>
     </properties>
 
     <repositories>
