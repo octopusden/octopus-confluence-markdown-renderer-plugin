@@ -1,6 +1,6 @@
-/*/target/
-/*/logs/
-/*/test_folder/
+/target/
+/logs/
+/test_folder/
 .idea/
 
 *.log

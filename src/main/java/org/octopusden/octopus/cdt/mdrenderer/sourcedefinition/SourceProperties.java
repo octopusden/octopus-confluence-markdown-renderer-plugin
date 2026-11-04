@@ -1,6 +1,8 @@
 package org.octopusden.octopus.cdt.mdrenderer.sourcedefinition;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 import org.json.JSONObject;
 
 @AllArgsConstructor

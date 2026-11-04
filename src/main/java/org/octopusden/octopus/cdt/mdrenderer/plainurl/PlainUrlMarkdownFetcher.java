@@ -1,28 +1,25 @@
-package org.octopusden.octopus.cdt.mdrenderer.subversion;
+package org.octopusden.octopus.cdt.mdrenderer.plainurl;
 
 import org.octopusden.octopus.cdt.mdrenderer.renderingengine.IMarkdownFetcher;
-import org.octopusden.octopus.cdt.mdrenderer.sourcedefinition.SourceProperties;
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 
 import static javax.xml.bind.DatatypeConverter.printBase64Binary;
 
-public class SubversionMarkdownFetcher implements IMarkdownFetcher {
+public class PlainUrlMarkdownFetcher implements IMarkdownFetcher {
     private final String basicUrl;
-    private final String basicAuth;
-    public SubversionMarkdownFetcher(SourceProperties sourceProperties, String svnCountry, String clientCode, String svnBranchPath, String path) throws NullPointerException, UnsupportedEncodingException {
-        basicUrl = sourceProperties.getSourceUrl() + ((sourceProperties.getSourceUrl().endsWith("/")) ? "" : "/") +
-                URLEncoder.encode(svnCountry, "UTF-8") + 
-                "/" +
-                URLEncoder.encode(clientCode, "UTF-8") +
-                (svnBranchPath.startsWith("/") ? "" : "/") + 
-                svnBranchPath +
-                (path.startsWith("/") ? "" : "/") +
-                path;
-        
-        basicAuth = "Basic " + printBase64Binary((sourceProperties.getSourceUsername() + ":" + sourceProperties.getSourcePassword()).getBytes());
+    public PlainUrlMarkdownFetcher(String plainUrl) {
+        basicUrl = plainUrl;
     }
 
     @Override
@@ -32,8 +29,11 @@ public class SubversionMarkdownFetcher implements IMarkdownFetcher {
             URL url = new URL(basicUrl);
             CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL));
             URLConnection urlConnection = url.openConnection();
-            urlConnection.setRequestProperty("Authorization", basicAuth);
-
+            if(url.getUserInfo() != null) {
+                String basicAuth = "Basic " + printBase64Binary(url.getUserInfo().getBytes(StandardCharsets.UTF_8));
+                urlConnection.setRequestProperty("Authorization", basicAuth);
+            }
+     
             InputStream inputStream = urlConnection.getInputStream();
             InputStreamReader inputStreamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
             BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
@@ -52,7 +52,7 @@ public class SubversionMarkdownFetcher implements IMarkdownFetcher {
         } catch (IndexOutOfBoundsException e) {
             markdown = "Exception[" + e + "] due to Resource too large.";
         }
-        
+
         return markdown;
     }
 }
