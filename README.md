@@ -83,3 +83,12 @@ Supported Wiki extensions:
 >```
 > ![relativePathImage](pictures/image.png)
 >```
+
+## Local testing
+
+```bash
+docker compose up -d          # Confluence 8.5.4 + Postgres, http://localhost:8090 (first start takes a few minutes)
+scripts/confluence-timebomb-license.sh --print-key   # paste into the setup wizard's license step
+```
+
+After the wizard, create `confluence-test-admin.env` (git-ignored) with `CONFLUENCE_ADMIN_USER=` and `CONFLUENCE_ADMIN_PASSWORD=`, then run `scripts/confluence-timebomb-license.sh` every time the 3-hour Atlassian timebomb license expires (the site turns read-only).

@@ -1,0 +1,38 @@
+# Local Confluence 8.5.4 (the plugin's target version) for testing the Markdown Renderer plugin.
+# docker compose up -d, then open http://localhost:8090 (first start takes a few minutes).
+services:
+  confluence:
+    image: atlassian/confluence:8.5.4
+    ports:
+      - "127.0.0.1:8090:8090"
+    environment:
+      ATL_DB_TYPE: postgresql
+      ATL_JDBC_URL: jdbc:postgresql://db:5432/confluence
+      ATL_JDBC_USER: confluence
+      ATL_JDBC_PASSWORD: confluence
+      JVM_MINIMUM_MEMORY: 1024m
+      JVM_MAXIMUM_MEMORY: 2048m
+      # keeps "Upload app" visible in Manage apps
+      JVM_SUPPORT_RECOMMENDED_ARGS: -Dupm.plugin.upload.enabled=true
+    volumes:
+      - confluence-data:/var/atlassian/application-data/confluence
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: confluence
+      POSTGRES_USER: confluence
+      POSTGRES_PASSWORD: confluence
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U confluence"]
+      interval: 5s
+      retries: 20
+
+volumes:
+  confluence-data:
+  db-data:
