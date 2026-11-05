@@ -121,9 +121,21 @@ jobs:
           SHA: ${{ needs.build.outputs.sha }}
         run: |
           set -euo pipefail
-          if gh release view "${TAG}" >/dev/null 2>&1; then
+          # --target is ignored once the tag exists, so an existing tag must already be our build.
+          ref=$(gh api "repos/${GH_REPO}/git/matching-refs/tags/${TAG}" --jq ".[] | select(.ref == \"refs/tags/${TAG}\") | .ref")
+          if [ -n "${ref}" ]; then
+            tag_sha=$(gh api "repos/${GH_REPO}/commits/refs/tags/${TAG}" --jq .sha)
+            if [ "${tag_sha}" != "${SHA}" ]; then
+              echo "::error::${TAG} points to ${tag_sha}, but this run built ${SHA}" >&2
+              exit 1
+            fi
+          fi
+          if draft=$(gh release view "${TAG}" --json isDraft --jq .isDraft); then
             echo "Release ${TAG} exists; attaching the files again."
             gh release upload "${TAG}" dist/* --clobber
+            if [ "${draft}" = "true" ]; then
+              gh release edit "${TAG}" --draft=false --target "${SHA}"
+            fi
           else
             gh release create "${TAG}" dist/* --target "${SHA}" --title "${TAG}" --generate-notes
           fi

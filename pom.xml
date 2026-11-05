@@ -20,7 +20,6 @@
 
     <scm>
         <connection>scm:git:git://github.com/octopusden/octopus-confluence-markdown-renderer-plugin.git</connection>
-        <developerConnection>scm:git:ssh://github.com:octopusden/octopus-confluence-markdown-renderer-plugin.git</developerConnection>
         <url>https://github.com/octopusden/octopus-confluence-markdown-renderer-plugin/tree/main</url>
     </scm>
 
