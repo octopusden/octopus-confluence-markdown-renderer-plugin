@@ -12,10 +12,17 @@ jobs:
   build:
     uses: ./.github/workflows/build.yml
 
+  release-scripts:
+    name: Release script tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash .github/scripts/test/release-version-scenarios.sh
+
   gate-merge:
     name: gate/merge
     if: ${{ always() }}
-    needs: [ build ]
+    needs: [ build, release-scripts ]
     runs-on: ubuntu-latest
     steps:
       - uses: octopusden/octopus-base/.github/actions/merge-gate@v3.4.1

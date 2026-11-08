@@ -53,30 +53,10 @@ jobs:
         id: version
         env:
           LEVEL: ${{ inputs.increment-version-level }}
-        run: |
-          set -euo pipefail
-          latest="$(git tag --list 'v*' | grep -E '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$' | sort -V | tail -n 1 || true)"
-          if [ -z "${latest}" ]; then
-            echo "::error::No vX.Y.Z tag to bump. Create the starting tag first." >&2
-            exit 1
-          fi
-          IFS=. read -r major minor patch <<<"${latest#v}"
-          case "${LEVEL}" in
-            major) major=$((major + 1)); minor=0; patch=0 ;;
-            minor) minor=$((minor + 1)); patch=0 ;;
-            patch) patch=$((patch + 1)) ;;
-            *) echo "::error::Unknown increment level '${LEVEL}'." >&2; exit 1 ;;
-          esac
-          version="${major}.${minor}.${patch}"
-          if git rev-parse -q --verify "refs/tags/v${version}" >/dev/null; then
-            echo "::error::Tag v${version} already exists." >&2
-            exit 1
-          fi
-          echo "Latest tag ${latest}, releasing ${version}"
-          {
-            echo "version=${version}"
-            echo "sha=$(git rev-parse HEAD)"
-          } >> "${GITHUB_OUTPUT}"
+          # v2.0.x tags belong to the old confluence-markdown-macro plugin; this plugin starts at 2.1.0.
+          # The pom version is a placeholder: the release version comes from the tags and this floor.
+          VERSION_FLOOR: 2.1.0
+        run: bash .github/scripts/release-version.sh
 
       - uses: actions/setup-java@v4
         with:
@@ -113,31 +93,49 @@ jobs:
           name: plugin-${{ needs.build.outputs.version }}
           path: dist
 
+      - name: Locate the plugin jar
+        id: jar
+        run: |
+          set -euo pipefail
+          jars=(dist/*.jar)
+          if [ "${#jars[@]}" -ne 1 ] || [ ! -f "${jars[0]}" ]; then
+            echo "::error::Expected exactly one jar in dist/, found: ${jars[*]}" >&2
+            exit 1
+          fi
+          echo "path=${jars[0]}" >> "${GITHUB_OUTPUT}"
+
+      # The tag/release logic shared by every octopus release flow (tags the built commit, adopts an
+      # existing tag only at that commit, finishes stranded drafts). Pinned to the commit of v3.4.1.
+      - name: Fetch the octopus-base release scripts
+        uses: actions/checkout@v4
+        with:
+          repository: octopusden/octopus-base
+          ref: 772eb884d7cc3654914f5526d1a1efa411b313d4 # v3.4.1
+          path: .octopus-base
+          sparse-checkout: .github/scripts
+
       - name: Create the tag and the GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           TAG: v${{ needs.build.outputs.version }}
-          SHA: ${{ needs.build.outputs.sha }}
+          BUILT_SHA: ${{ needs.build.outputs.sha }}
+          RELEASE_ASSET: ${{ steps.jar.outputs.path }}
+        run: bash .octopus-base/.github/scripts/tag-and-release.sh
+
+      # The shared script treats the asset as optional and only warns when the upload fails.
+      # Here the jar is the release, so its absence fails the job; "re-run failed jobs" uploads it.
+      - name: Check that the jar is attached
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: v${{ needs.build.outputs.version }}
+          JAR: ${{ steps.jar.outputs.path }}
         run: |
           set -euo pipefail
-          # --target is ignored once the tag exists, so an existing tag must already be our build.
-          ref=$(gh api "repos/${GH_REPO}/git/matching-refs/tags/${TAG}" --jq ".[] | select(.ref == \"refs/tags/${TAG}\") | .ref")
-          if [ -n "${ref}" ]; then
-            tag_sha=$(gh api "repos/${GH_REPO}/commits/refs/tags/${TAG}" --jq .sha)
-            if [ "${tag_sha}" != "${SHA}" ]; then
-              echo "::error::${TAG} points to ${tag_sha}, but this run built ${SHA}" >&2
-              exit 1
-            fi
-          fi
-          if draft=$(gh release view "${TAG}" --json isDraft --jq .isDraft); then
-            echo "Release ${TAG} exists; attaching the files again."
-            gh release upload "${TAG}" dist/* --clobber
-            if [ "${draft}" = "true" ]; then
-              gh release edit "${TAG}" --draft=false --target "${SHA}"
-            fi
-          else
-            gh release create "${TAG}" dist/* --target "${SHA}" --title "${TAG}" --generate-notes
+          if ! gh release view "${TAG}" --json assets --jq '.assets[].name' | grep -qxF "$(basename "${JAR}")"; then
+            echo "::error::Release ${TAG} has no $(basename "${JAR}"). Re-run the failed jobs to attach it." >&2
+            exit 1
           fi
 
   register:
