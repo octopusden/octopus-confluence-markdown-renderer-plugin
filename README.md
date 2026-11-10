@@ -2,6 +2,10 @@
 The plugin Implements a confluence macro to render remote markdown file from various pre-defined sources (e.g. Git, Subversion, ...) on Confluence Wiki pages. 
 Rendering is performed using [flexmark-java](https://github.com/vsch/flexmark-java) library.
 
+## Versions
+Releases start at 2.1.0. The `v2.0.x` tags in this repository belong to the old `confluence-markdown-macro` plugin, which has a different plugin key and macro key (`md-renderer-macro`).
+2.1 replaces 2.0.x but is not an in-place upgrade: Confluence installs it as a separate plugin (`markdown-renderer-plugin`), and pages that use the old macro need the old plugin until they are switched to the new macro (`mdrenderer-macro`).
+
 ## Administrator Configuration
 ### Source List Configuration
 The Space Admin (or user with such privileges) must be responsible for defining and maintaining the list of sources the plugin shall propose to the users.
