@@ -1,0 +1,163 @@
+# Builds the plugin, tags the released commit and attaches the plugin jar to a GitHub Release.
+#
+# The plugin is installed into Confluence by hand: the jar is downloaded from the release.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      increment-version-level:
+        description: Semver level to bump the latest v* tag by
+        required: false
+        type: choice
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+      dry-run:
+        description: Build and package only; tag, release and register nothing
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Two overlapping releases would compute the same version. Dry runs get a group of their own.
+concurrency:
+  group: release-${{ github.repository }}-${{ inputs.dry-run && github.run_id || 'publish' }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      sha: ${{ steps.version.outputs.sha }}
+    steps:
+      # The GITHUB_TOKEN cannot tag a commit that carries workflow files found on no branch head,
+      # which a dispatch from another branch can produce. Releasing the default branch avoids it.
+      # A dry run tags nothing (tag-and-release and register are skipped), so it may run from any branch.
+      - name: Release only from the default branch
+        if: ${{ !inputs.dry-run && github.ref != format('refs/heads/{0}', github.event.repository.default_branch) }}
+        run: |
+          echo "::error::Run this workflow from ${{ github.event.repository.default_branch }}, not ${{ github.ref_name }}." >&2
+          exit 1
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate version
+        id: version
+        env:
+          LEVEL: ${{ inputs.increment-version-level }}
+          # v2.0.x tags belong to the old confluence-markdown-macro plugin; this plugin starts at 2.1.0.
+          # The pom version is a placeholder: the release version comes from the tags and this floor.
+          VERSION_FLOOR: 2.1.0
+        run: bash .github/scripts/release-version.sh
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+
+      - name: Set version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: mvn --batch-mode org.codehaus.mojo:versions-maven-plugin:2.13.0:set -DnewVersion="${VERSION}" -DgenerateBackupPoms=false
+
+      # Only the plugin jar is released, so the sources and javadoc jars are not built.
+      - name: Build
+        run: mvn --batch-mode package -Dmaven.source.skip=true -Dmaven.javadoc.skip=true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin-${{ steps.version.outputs.version }}
+          path: target/*-${{ steps.version.outputs.version }}.jar
+          if-no-files-found: error
+          retention-days: 7
+
+  # A job of its own, so that "re-run failed jobs" repeats only the tagging.
+  tag-and-release:
+    name: Tag and release
+    if: ${{ !inputs.dry-run }}
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      # First: checkout cleans the workspace, which would remove the downloaded jar.
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: plugin-${{ needs.build.outputs.version }}
+          path: dist
+
+      - name: Locate the plugin jar
+        id: jar
+        run: |
+          set -euo pipefail
+          jars=(dist/*.jar)
+          if [ "${#jars[@]}" -ne 1 ] || [ ! -f "${jars[0]}" ]; then
+            echo "::error::Expected exactly one jar in dist/, found: ${jars[*]}" >&2
+            exit 1
+          fi
+          echo "path=${jars[0]}" >> "${GITHUB_OUTPUT}"
+
+      # The tag/release logic shared by every octopus release flow (tags the built commit, adopts an
+      # existing tag only at that commit, finishes stranded drafts). Pinned to the commit of v3.4.1.
+      - name: Fetch the octopus-base release scripts
+        uses: actions/checkout@v4
+        with:
+          repository: octopusden/octopus-base
+          ref: 772eb884d7cc3654914f5526d1a1efa411b313d4 # v3.4.1
+          path: .octopus-base
+          sparse-checkout: .github/scripts
+
+      # The shared script adopts an existing jar by name. Refuse one with other content (a draft left
+      # by another build) and drop an empty one left by a failed upload, before anything is tagged.
+      - name: Check the jar already on the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          MODE: prepare
+          TAG: v${{ needs.build.outputs.version }}
+          JAR: ${{ steps.jar.outputs.path }}
+        run: bash .github/scripts/release-jar.sh
+
+      - name: Create the tag and the GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: v${{ needs.build.outputs.version }}
+          BUILT_SHA: ${{ needs.build.outputs.sha }}
+          RELEASE_ASSET: ${{ steps.jar.outputs.path }}
+        run: bash .octopus-base/.github/scripts/tag-and-release.sh
+
+      # The shared script treats the asset as optional and only warns when the upload fails.
+      # Here the jar is the release, so anything but this run's jar, fully uploaded, fails the job
+      # before registration; "re-run failed jobs" uploads it.
+      - name: Check that the jar is attached
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          MODE: verify
+          TAG: v${{ needs.build.outputs.version }}
+          JAR: ${{ steps.jar.outputs.path }}
+        run: bash .github/scripts/release-jar.sh
+
+  register:
+    name: Register release
+    if: ${{ !inputs.dry-run }}
+    needs: [build, tag-and-release]
+    uses: octopusden/octopus-base/.github/workflows/common-register-release.yml@v3.4.1
+    with:
+      octopus-repository: ${{ github.repository }}
+      release-version: ${{ needs.build.outputs.version }}
+    secrets: inherit
