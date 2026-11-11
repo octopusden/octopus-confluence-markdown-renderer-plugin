@@ -89,6 +89,11 @@ jobs:
     permissions:
       contents: write
     steps:
+      # First: checkout cleans the workspace, which would remove the downloaded jar.
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+
       - uses: actions/download-artifact@v4
         with:
           name: plugin-${{ needs.build.outputs.version }}
@@ -115,6 +120,17 @@ jobs:
           path: .octopus-base
           sparse-checkout: .github/scripts
 
+      # The shared script adopts an existing jar by name. Refuse one with other content (a draft left
+      # by another build) and drop an empty one left by a failed upload, before anything is tagged.
+      - name: Check the jar already on the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          MODE: prepare
+          TAG: v${{ needs.build.outputs.version }}
+          JAR: ${{ steps.jar.outputs.path }}
+        run: bash .github/scripts/release-jar.sh
+
       - name: Create the tag and the GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -125,19 +141,16 @@ jobs:
         run: bash .octopus-base/.github/scripts/tag-and-release.sh
 
       # The shared script treats the asset as optional and only warns when the upload fails.
-      # Here the jar is the release, so its absence fails the job; "re-run failed jobs" uploads it.
+      # Here the jar is the release, so anything but this run's jar, fully uploaded, fails the job
+      # before registration; "re-run failed jobs" uploads it.
       - name: Check that the jar is attached
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
+          MODE: verify
           TAG: v${{ needs.build.outputs.version }}
           JAR: ${{ steps.jar.outputs.path }}
-        run: |
-          set -euo pipefail
-          if ! gh release view "${TAG}" --json assets --jq '.assets[].name' | grep -qxF "$(basename "${JAR}")"; then
-            echo "::error::Release ${TAG} has no $(basename "${JAR}"). Re-run the failed jobs to attach it." >&2
-            exit 1
-          fi
+        run: bash .github/scripts/release-jar.sh
 
   register:
     name: Register release

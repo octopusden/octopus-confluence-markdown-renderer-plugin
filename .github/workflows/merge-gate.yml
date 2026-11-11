@@ -18,6 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: bash .github/scripts/test/release-version-scenarios.sh
+      - run: bash .github/scripts/test/release-jar-scenarios.sh
 
   gate-merge:
     name: gate/merge
