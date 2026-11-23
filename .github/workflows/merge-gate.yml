@@ -18,7 +18,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: bash .github/scripts/test/release-version-scenarios.sh
-      - run: bash .github/scripts/test/release-jar-scenarios.sh
 
   gate-merge:
     name: gate/merge
@@ -26,6 +25,6 @@ jobs:
     needs: [ build, release-scripts ]
     runs-on: ubuntu-latest
     steps:
-      - uses: octopusden/octopus-base/.github/actions/merge-gate@v3.4.1
+      - uses: octopusden/octopus-base/.github/actions/merge-gate@v3.5.0
         with:
           needs: ${{ toJson(needs) }}

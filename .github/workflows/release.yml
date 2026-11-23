@@ -89,11 +89,6 @@ jobs:
     permissions:
       contents: write
     steps:
-      # First: checkout cleans the workspace, which would remove the downloaded jar.
-      - uses: actions/checkout@v4
-        with:
-          sparse-checkout: .github/scripts
-
       - uses: actions/download-artifact@v4
         with:
           name: plugin-${{ needs.build.outputs.version }}
@@ -111,52 +106,34 @@ jobs:
           echo "path=${jars[0]}" >> "${GITHUB_OUTPUT}"
 
       # The tag/release logic shared by every octopus release flow (tags the built commit, adopts an
-      # existing tag only at that commit, finishes stranded drafts). Pinned to the commit of v3.4.1.
+      # existing tag only at that commit, finishes stranded drafts). Pinned to the commit of v3.5.0.
       - name: Fetch the octopus-base release scripts
         uses: actions/checkout@v4
         with:
           repository: octopusden/octopus-base
-          ref: 772eb884d7cc3654914f5526d1a1efa411b313d4 # v3.4.1
+          ref: 0705fcda02abb1477144ba4f8f8f0cefa4f41275 # v3.5.0
           path: .octopus-base
           sparse-checkout: .github/scripts
 
-      # The shared script adopts an existing jar by name. Refuse one with other content (a draft left
-      # by another build) and drop an empty one left by a failed upload, before anything is tagged.
-      - name: Check the jar already on the release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          MODE: prepare
-          TAG: v${{ needs.build.outputs.version }}
-          JAR: ${{ steps.jar.outputs.path }}
-        run: bash .github/scripts/release-jar.sh
-
+      # RELEASE_ARTIFACT: the release is published only once it holds this run's jar, fully uploaded
+      # and matching by sha256; on failure use "re-run failed jobs", not a new dispatch.
       - name: Create the tag and the GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           TAG: v${{ needs.build.outputs.version }}
           BUILT_SHA: ${{ needs.build.outputs.sha }}
-          RELEASE_ASSET: ${{ steps.jar.outputs.path }}
-        run: bash .octopus-base/.github/scripts/tag-and-release.sh
-
-      # The shared script treats the asset as optional and only warns when the upload fails.
-      # Here the jar is the release, so anything but this run's jar, fully uploaded, fails the job
-      # before registration; "re-run failed jobs" uploads it.
-      - name: Check that the jar is attached
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          MODE: verify
-          TAG: v${{ needs.build.outputs.version }}
-          JAR: ${{ steps.jar.outputs.path }}
-        run: bash .github/scripts/release-jar.sh
+          RELEASE_ARTIFACT: ${{ steps.jar.outputs.path }}
+        # Empty would switch the jar check off and publish a release without the jar.
+        run: |
+          : "${RELEASE_ARTIFACT:?RELEASE_ARTIFACT is empty}"
+          bash .octopus-base/.github/scripts/tag-and-release.sh
 
   register:
     name: Register release
     if: ${{ !inputs.dry-run }}
     needs: [build, tag-and-release]
-    uses: octopusden/octopus-base/.github/workflows/common-register-release.yml@v3.4.1
+    uses: octopusden/octopus-base/.github/workflows/common-register-release.yml@v3.5.0
     with:
       octopus-repository: ${{ github.repository }}
       release-version: ${{ needs.build.outputs.version }}
