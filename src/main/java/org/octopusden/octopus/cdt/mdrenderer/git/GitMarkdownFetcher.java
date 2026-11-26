@@ -6,8 +6,20 @@ import org.octopusden.octopus.cdt.mdrenderer.sourcedefinition.SourceProperties;
 import org.octopusden.octopus.cdt.mdrenderer.renderingengine.IMarkdownFetcher;
 
 import javax.net.ssl.HttpsURLConnection;
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -45,7 +57,7 @@ public class GitMarkdownFetcher implements IMarkdownFetcher {
                 "rest/api/1.0/projects/" + URLEncoder.encode(projectKey, "UTF-8") +
                 "/repos/" + URLEncoder.encode(repository, "UTF-8");
 
-        this.basicAuth = "Basic " + printBase64Binary((sourceProperties.getSourceUsername() + ":" + sourceProperties.getSourcePassword()).getBytes());
+        this.basicAuth = "Basic " + printBase64Binary((sourceProperties.getSourceUsername() + ":" + sourceProperties.getSourcePassword()).getBytes(StandardCharsets.UTF_8));
         this.path = path;
         this.revision = revision;
     }

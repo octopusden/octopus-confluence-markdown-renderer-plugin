@@ -2,6 +2,10 @@
 The plugin Implements a confluence macro to render remote markdown file from various pre-defined sources (e.g. Git, Subversion, ...) on Confluence Wiki pages. 
 Rendering is performed using [flexmark-java](https://github.com/vsch/flexmark-java) library.
 
+## Versions
+Releases start at 2.1.0. The `v2.0.x` tags in this repository belong to the old `confluence-markdown-macro` plugin, which has a different plugin key and macro key (`md-renderer-macro`).
+2.1 replaces 2.0.x but is not an in-place upgrade: Confluence installs it as a separate plugin (`markdown-renderer-plugin`), and pages that use the old macro need the old plugin until they are switched to the new macro (`mdrenderer-macro`).
+
 ## Administrator Configuration
 ### Source List Configuration
 The Space Admin (or user with such privileges) must be responsible for defining and maintaining the list of sources the plugin shall propose to the users.
@@ -84,8 +88,11 @@ Supported Wiki extensions:
 > ![relativePathImage](pictures/image.png)
 >```
 
-## Revision history
-| Version | Date       | Author          | Confluence version | Description                                                                                                                                                            |
-|---------|------------|-----------------|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 01.01   | 07.11.2024 | Gautier Devuyst | 8.5.4              | Moved logic to check non-nullness of parameters only in relevant Source Type + updated flexmark library version + leading ">" are now properly removed in quoted code. |
-| 01.00   | 12.04.2024 | Gautier Devuyst | 8.5.4              | Initial version.                                                                                                                                                       |
+## Local testing
+
+```bash
+docker compose up -d          # Confluence 8.5.4 + Postgres, http://localhost:8090 (first start takes a few minutes)
+scripts/confluence-timebomb-license.sh --print-key   # paste into the setup wizard's license step
+```
+
+After the wizard, create `confluence-test-admin.env` (git-ignored) with `CONFLUENCE_ADMIN_USER=` and `CONFLUENCE_ADMIN_PASSWORD=`, then run `scripts/confluence-timebomb-license.sh` every time the 3-hour Atlassian timebomb license expires (the site turns read-only).

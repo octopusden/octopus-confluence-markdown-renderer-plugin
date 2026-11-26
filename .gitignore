@@ -1,6 +1,6 @@
-/*/target/
-/*/logs/
-/*/test_folder/
+/target/
+/logs/
+/test_folder/
 .idea/
 
 *.log
@@ -10,3 +10,6 @@
 *.prm
 *.zip
 dependency-reduced-pom.xml
+
+# local Confluence admin credentials
+confluence-test-admin.env
